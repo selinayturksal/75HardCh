@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'main3.dart';
+import 'main3.dart'; // GecisSayfasi'na erişim için
 
 class AnaSayfa extends StatefulWidget {
-  const AnaSayfa({super.key});
+  // 1. Gelen veriyi burada karşılıyoruz
+  final String kullaniciAdi;
+
+  const AnaSayfa({super.key, required this.kullaniciAdi});
 
   @override
   State<AnaSayfa> createState() => _AnaSayfaState();
@@ -11,18 +14,15 @@ class AnaSayfa extends StatefulWidget {
 
 class _AnaSayfaState extends State<AnaSayfa> {
   // Hoşgeldiniz Animasyonu
-  final String _hosgeldinMetni = "HOŞGELDİNİZ";
+  late String _hosgeldinMetni; // Metni dinamik yapacağız
   String _ekrandakiMetin = "";
   int _harfSayaci = 0;
   bool _hosgeldinBitti = false;
 
   // İçerik Akışı için
-  // 0: Sadece soru var
-  // 1-5: Özellikler sırayla geliyor
-  // 6: Sayfa değişiyor
   int _aktifAdim = 0;
 
-  // Özellik Listesi (İsimler ve İkonlar)
+  // Özellik Listesi
   final List<Map<String, dynamic>> _ozellikler = [
     {
       "baslik": "Günlük Sporun",
@@ -58,13 +58,14 @@ class _AnaSayfaState extends State<AnaSayfa> {
   @override
   void initState() {
     super.initState();
-    // Sayfa açılır açılmaz daktilo efektini başlat
+    // 2. Metni kullanıcının adına göre ayarlıyoruz (Büyük harfle)
+    _hosgeldinMetni = "HOŞGELDİN ${widget.kullaniciAdi.toUpperCase()}";
+
     _daktiloEfektiniBaslat();
   }
 
   void _daktiloEfektiniBaslat() {
     Timer.periodic(const Duration(milliseconds: 150), (timer) {
-      // Eğer sayfa kapandıysa timer'ı durdur (Hata önleyici)
       if (!mounted) {
         timer.cancel();
         return;
@@ -77,13 +78,11 @@ class _AnaSayfaState extends State<AnaSayfa> {
         });
       } else {
         timer.cancel();
-        // Yazı bittikten 1 saniye sonra ana ekrana geç
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             setState(() {
               _hosgeldinBitti = true;
             });
-            // Ana ekran geldikten yarım saniye sonra ilk maddeyi göster
             Future.delayed(const Duration(milliseconds: 200), () {
               if (mounted) {
                 setState(() {
@@ -97,9 +96,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     });
   }
 
-  // Ekrana tıklayınca ne olsun?
   void _ekranaTiklandi(TapDownDetails details) {
-    // 1. Kalp oluştur
     setState(() {
       _kalpler.add(
         KalpModeli(
@@ -109,17 +106,20 @@ class _AnaSayfaState extends State<AnaSayfa> {
       );
     });
 
-    // 2. Eğer hoşgeldin yazısı gittiyse, bir sonraki maddeyi getir
     if (_hosgeldinBitti) {
       if (_aktifAdim < _ozellikler.length) {
         setState(() {
           _aktifAdim++;
         });
       } else {
-        // Maddeler bittiyse diğer sayfaya geç
+        // 3. Diğer sayfaya geçerken ismi taşıyoruz
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const GecisSayfasi()),
+          MaterialPageRoute(
+            builder: (context) => GecisSayfasi(
+              gelenKullaniciAdi: widget.kullaniciAdi, // İsim burada aktarılıyor
+            ),
+          ),
         );
       }
     }
@@ -130,7 +130,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: GestureDetector(
-        behavior: HitTestBehavior.opaque, // Boşluğa tıklamayı da algıla
+        behavior: HitTestBehavior.opaque,
         onTapDown: _ekranaTiklandi,
         child: Stack(
           children: [
@@ -141,7 +141,6 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   child: Column(
                     children: [
                       const SizedBox(height: 20),
-                      // Logo ve Başlık
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -150,21 +149,17 @@ class _AnaSayfaState extends State<AnaSayfa> {
                           const Text(
                             "75 Hard Challenge",
                             style: TextStyle(
-                              color: const Color(0xFFC52184),
+                              color: Color(0xFFC52184),
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 30),
-
-                      // SORU KISMI (Animasyonlu yer değiştirme)
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 600),
                         curve: Curves.easeInOut,
-                        // İlk adımda ortada, sonrakilerde yukarıda dursun
                         height: _aktifAdim == 0
                             ? MediaQuery.of(context).size.height * 0.3
                             : 60,
@@ -180,15 +175,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
                           ),
                         ),
                       ),
-
-                      // ÖZELLİKLER LİSTESİ
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20.0),
                           child: ListView.builder(
                             itemCount: _ozellikler.length,
                             itemBuilder: (context, index) {
-                              // Henüz sırası gelmeyenleri gizle
                               if (index >= _aktifAdim)
                                 return const SizedBox.shrink();
 
@@ -235,8 +227,6 @@ class _AnaSayfaState extends State<AnaSayfa> {
                           ),
                         ),
                       ),
-
-                      // İpucu Yazısı
                       if (_aktifAdim <= _ozellikler.length)
                         Padding(
                           padding: const EdgeInsets.all(20.0),
@@ -244,8 +234,8 @@ class _AnaSayfaState extends State<AnaSayfa> {
                             _aktifAdim == _ozellikler.length
                                 ? "Bitirmek için son kez dokun ✨"
                                 : "Devam etmek için ekrana dokun...",
-                            style: TextStyle(
-                              color: const Color(0xFFFEC9F1),
+                            style: const TextStyle(
+                              color: Color(0xFFFEC9F1),
                               fontSize: 14,
                             ),
                           ),
@@ -255,11 +245,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
                 ),
               ),
 
-            // --- KATMAN 2: HOŞGELDİNİZ YAZISI (Daktilo Efekti) ---
+            // --- KATMAN 2: HOŞGELDİNİZ YAZISI ---
             if (!_hosgeldinBitti)
               Center(
                 child: Text(
                   _ekrandakiMetin,
+                  textAlign: TextAlign.center, // İsim uzunsa alt satıra geçsin
                   style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.bold,
@@ -287,8 +278,6 @@ class _AnaSayfaState extends State<AnaSayfa> {
     );
   }
 }
-
-// --- YARDIMCI KODLAR (KALP ANİMASYONU İÇİN) ---
 
 class KalpModeli {
   final int id;
@@ -357,7 +346,7 @@ class _GeciciKalpWidgetState extends State<GeciciKalpWidget>
                 scale: _scaleAnimation.value,
                 child: const Icon(
                   Icons.favorite,
-                  color: const Color(0xFFFF4000),
+                  color: Color(0xFFFF4000),
                   size: 20,
                 ),
               ),

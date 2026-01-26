@@ -1,31 +1,29 @@
+// main.dart
 import 'package:flutter/material.dart';
-import 'main2.dart';
+import 'main2.dart'; // Kayıt olanlar buraya (Animasyon)
+import 'main5.dart'; // Giriş yapanlar direkt buraya (Dashboard)
 
 void main() {
-  // Uygulamanın başlangıç noktası
   runApp(const BenimUygulamam());
 }
 
 class BenimUygulamam extends StatelessWidget {
-  // uygulamanın genel ayarları.statelass sabit ekran için, stateful değişen ekranlar için
   const BenimUygulamam({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //uygulamanın ana iskeleti
-      debugShowCheckedModeBanner: false, // sağ üstteki debug etiketini kaldırır
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC52184)),
-        useMaterial3: true, // Daha modern görünüm sağlar
+        useMaterial3: true,
       ),
-      home: const GirisEkrani(), //uygulama açıldığında gösterilecek ilk ekran
+      home: const GirisEkrani(),
     );
   }
 }
 
 class GirisEkrani extends StatefulWidget {
-  // statefull çünkü ekranda değişen veriler var (girilen yazı, şifre görünürlüğü vb.)
   const GirisEkrani({super.key});
 
   @override
@@ -39,68 +37,109 @@ class _GirisEkraniState extends State<GirisEkrani> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _sifreController = TextEditingController();
+  final TextEditingController _kullaniciAdiController = TextEditingController();
 
   final RegExp _sifreRegex = RegExp(
-    // şifrenin kurallara uyup uymadığını kontrol et
     r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$',
   );
 
-  // Simülasyon için sahte veritabanı bilgisi
+  // Simülasyon verileri
   final String _kayitliEmail = "deneme@gmail.com";
   final String _kayitliSifre = "Deneme123";
 
   // --- İŞLEM FONKSİYONU ---
   void _islemYap() {
-    String email = _emailController.text.trim(); // Boşlukları temizle
+    String email = _emailController.text.trim();
     String sifre = _sifreController.text;
+    String kullaniciAdi = "";
 
-    // 1. E-POSTA KONTROLÜ (Her iki durumda da geçerli)
-    if (!email.contains("@")) {
-      _mesajGoster("Lütfen geçerli bir e-posta adresi giriniz.");
-      return;
-    }
-
+    // ==========================================
+    // 1. GİRİŞ YAPMA SENARYOSU (ESKİ KULLANICI)
+    // ==========================================
     if (girisModu) {
-      // --- GİRİŞ MODU SENARYOSU ---
+      if (email.isEmpty || sifre.isEmpty) {
+        _mesajGoster("Lütfen tüm alanları doldurunuz.");
+        return;
+      }
 
-      // Veritabanı olmadığı için elle kontrol ediyoruz (Mocking)
-      if (email == _kayitliEmail && sifre == _kayitliSifre) {
-        _mesajGoster("Giriş Başarılı! Hoş geldiniz.", renk: Color(0xFF9CC4B2));
+      // Giriş Kontrolü (Simülasyon)
+      if ((email == _kayitliEmail || email == "Selinay") &&
+          sifre == _kayitliSifre) {
+        _mesajGoster(
+          "Giriş Başarılı! Hoş geldiniz.",
+          renk: const Color(0xFF9CC4B2),
+        );
+
+        // Giriş yapanın ismini belirle
+        kullaniciAdi = email.contains("@") ? "Selinay" : email;
+
+        // DİREKT MAIN 5'E GİT (INTRO YOK)
         Future.delayed(const Duration(seconds: 1), () {
-          // Sayfa hala açıksa yönlendirme yap
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const AnaSayfa()),
+              MaterialPageRoute(
+                builder: (context) => AnaTakipEkrani(
+                  kullaniciIsmi: kullaniciAdi,
+                  // NOT: Gerçek uygulamada veritabanından çekeriz.
+                  // Şimdilik kayıtlı kullanıcının hedefleri bunlarmış gibi davranıyoruz:
+                  secilenHedefler: const ["Spor ve Beslenme", "Kitap Okuma"],
+                ),
+              ),
             );
           }
         });
-      } else if (email != _kayitliEmail) {
-        _mesajGoster(
-          "Bu e-posta ile kayıtlı kullanıcı bulunamadı.",
-          renk: Color(0xFFFF4000),
-        );
       } else {
-        // Email doğru ama şifre yanlışsa
-        _mesajGoster("Girdiğiniz şifre hatalı.", renk: Color(0xFFFF4000));
+        _mesajGoster(
+          "Kullanıcı adı/E-posta veya şifre hatalı.",
+          renk: const Color(0xFFFF4000),
+        );
       }
-    } else {
-      // --- KAYIT MODU SENARYOSU ---
+    }
+    // ==========================================
+    // 2. KAYIT OLMA SENARYOSU (YENİ KULLANICI)
+    // ==========================================
+    else {
+      if (_kullaniciAdiController.text.trim().isEmpty) {
+        _mesajGoster("Lütfen bir kullanıcı adı belirleyiniz.");
+        return;
+      }
 
-      // Şifre Validasyonu (Regex ile kontrol)
+      if (!email.contains("@")) {
+        _mesajGoster("Lütfen geçerli bir e-posta adresi giriniz.");
+        return;
+      }
+
       if (!_sifreRegex.hasMatch(sifre)) {
         _mesajGoster(
-          "Şifre en az 8 karakter olmalı, büyük harf, küçük harf ve rakam içermelidir.",
-          renk: Color(0xFFFF4000),
+          "Şifre en az 8 karakter, büyük/küçük harf ve rakam içermelidir.",
+          renk: const Color(0xFFFF4000),
         );
         return;
       }
-      // Her şey yolundaysa
-      _mesajGoster("Kayıt başarıyla oluşturuldu!", renk: Color(0xFF9CC4B2));
+
+      // Kayıt Başarılı
+      kullaniciAdi = _kullaniciAdiController.text.trim();
+      _mesajGoster(
+        "Kayıt başarıyla oluşturuldu!",
+        renk: const Color(0xFF9CC4B2),
+      );
+
+      // INTRO'YA GİT (MAIN 2)
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              // Yeni kullanıcı olduğu için tanıtım ekranına (AnaSayfa) gidiyor
+              builder: (context) => AnaSayfa(kullaniciAdi: kullaniciAdi),
+            ),
+          );
+        }
+      });
     }
   }
 
-  // uyarı mesajı göstermek için fonksiyon
   void _mesajGoster(String mesaj, {Color renk = const Color(0xFFFF4000)}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -128,7 +167,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 style: const TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFFC52184),
+                  color: Color(0xFFC52184),
                 ),
               ),
               const SizedBox(height: 10),
@@ -144,7 +183,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFFFF4000),
+                  color: Color(0xFFFF4000),
                 ),
               ),
               const SizedBox(height: 10),
@@ -156,13 +195,34 @@ class _GirisEkraniState extends State<GirisEkrani> {
               ),
               const SizedBox(height: 40),
 
-              // --- E-POSTA ALANI ---
+              // --- KULLANICI ADI ALANI (Sadece Kayıt Modunda) ---
+              if (!girisModu) ...[
+                TextField(
+                  controller: _kullaniciAdiController,
+                  decoration: InputDecoration(
+                    labelText: "Kullanıcı Adı",
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // --- E-POSTA / KULLANICI ADI GİRİŞİ ---
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: "E-Posta",
-                  hintText: "ornek@email.com", // Kullanıcıya ipucu
+                  labelText: girisModu
+                      ? "E-Posta veya Kullanıcı Adı"
+                      : "E-Posta",
+                  hintText: girisModu
+                      ? "Kullanıcı adı veya e-posta"
+                      : "ornek@email.com",
                   prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -206,7 +266,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _islemYap, // Fonksiyonu buraya bağladık
+                  onPressed: _islemYap,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFC52184),
                     foregroundColor: Colors.white,
@@ -234,16 +294,16 @@ class _GirisEkraniState extends State<GirisEkrani> {
                     onPressed: () {
                       setState(() {
                         girisModu = !girisModu;
-                        // Mod değişince inputları temizlemek iyi bir deneyim olabilir
                         _emailController.clear();
                         _sifreController.clear();
+                        _kullaniciAdiController.clear();
                       });
                     },
                     child: Text(
                       girisModu ? "Kayıt Ol" : "Giriş Yap",
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFC52184),
+                        color: Color(0xFFC52184),
                       ),
                     ),
                   ),

@@ -1,10 +1,13 @@
 // main3.dart
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'main4.dart';
+import 'main4.dart'; // SonSayfa'ya geçiş için gerekli
 
 class GecisSayfasi extends StatefulWidget {
-  const GecisSayfasi({super.key});
+  // 1. DEĞİŞİKLİK: Önceki sayfadan gelen ismi burada karşılıyoruz
+  final String gelenKullaniciAdi;
+
+  const GecisSayfasi({super.key, required this.gelenKullaniciAdi});
 
   @override
   State<GecisSayfasi> createState() => _GecisSayfasiState();
@@ -30,7 +33,11 @@ class _GecisSayfasiState extends State<GecisSayfasi>
       if (status == AnimationStatus.completed) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const SonSayfa()),
+          MaterialPageRoute(
+            // 2. DEĞİŞİKLİK: İsmi bir sonraki durak olan SonSayfa'ya (main4) aktarıyoruz
+            builder: (context) =>
+                SonSayfa(gelenKullaniciAdi: widget.gelenKullaniciAdi),
+          ),
         );
       }
     });
@@ -145,7 +152,7 @@ class _GecisSayfasiState extends State<GecisSayfasi>
   }
 }
 
-// --- YARDIMCI SINIFLAR (Main3 için gerekli) ---
+// --- YARDIMCI SINIFLAR ---
 class KalpModeli {
   final int id;
   final Offset pozisyon;
