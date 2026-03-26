@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "75 Hard",
+    "slug": "seventy-five",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF9F0"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.seventyfive.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFF9F0"
+      },
+      "package": "com.seventyfive.app"
+    }
+  }
+}

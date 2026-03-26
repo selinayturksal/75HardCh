@@ -1,0 +1,41 @@
+export const lightTheme = {
+  background: '#FFF9F0',
+  card: '#FFFFFF',
+  primary: '#FF6B6B',
+  secondary: '#4ECDC4',
+  accent: '#FFE66D',
+  purple: '#A8DADC',
+  text: '#2D3436',
+  textLight: '#636E72',
+  border: '#DFE6E9',
+  success: '#55EFC4',
+  warning: '#FDCB6E',
+  sport: '#FF6B6B',
+  book: '#A29BFE',
+  nutrition: '#55EFC4',
+  academic: '#FDCB6E',
+  personal: '#FD79A8',
+  social: '#74B9FF',
+};
+
+export const darkTheme = {
+  background: '#1A1A2E',
+  card: '#16213E',
+  primary: '#FF6B6B',
+  secondary: '#4ECDC4',
+  accent: '#FFE66D',
+  purple: '#A8DADC',
+  text: '#F5F5F5',
+  textLight: '#B2BEC3',
+  border: '#2D3561',
+  success: '#55EFC4',
+  warning: '#FDCB6E',
+  sport: '#FF6B6B',
+  book: '#A29BFE',
+  nutrition: '#55EFC4',
+  academic: '#FDCB6E',
+  personal: '#FD79A8',
+  social: '#74B9FF',
+};
+
+export type Theme = typeof lightTheme;

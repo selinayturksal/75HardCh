@@ -1,0 +1,342 @@
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, SafeAreaView, TextInput, Alert, Modal,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
+import { useLang } from '../context/LanguageContext';
+import { useProgress } from '../hooks/useProgress';
+import * as Haptics from 'expo-haptics';
+
+const COLOR = '#55EFC4';
+
+export default function NutritionScreen() {
+  const { theme } = useTheme();
+  const { t } = useLang();
+  const navigation = useNavigation();
+  const { todayDone, markToday, getDayCount, getProgressPercent } = useProgress('nutrition');
+
+  const [mealName, setMealName] = useState('');
+  const [water, setWater] = useState('');
+  const [notes, setNotes] = useState('');
+  const [meals, setMeals] = useState<string[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const dayCount = getDayCount();
+  const percent = getProgressPercent();
+
+  const addMeal = () => {
+    if (!mealName.trim()) return;
+    setMeals(prev => [...prev, mealName.trim()]);
+    setMealName('');
+  };
+
+  const handleSave = async () => {
+    if (meals.length === 0 || !water) {
+      Alert.alert(t.fillAll);
+      return;
+    }
+    await markToday({ meals, water, notes });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setModalVisible(true);
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* HEADER */}
+      <View style={[styles.header, { backgroundColor: COLOR }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>🥗 {t.nutrition}</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* PROGRESS */}
+        <View style={[styles.progressCard, { backgroundColor: theme.card }]}>
+          <View style={styles.progressHeader}>
+            <Text style={[styles.progressTitle, { color: theme.text }]}>
+              {dayCount} / 75 {t.days}
+            </Text>
+            <Text style={[styles.progressPercent, { color: COLOR }]}>
+              %{Math.round(percent)}
+            </Text>
+          </View>
+
+          <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
+            <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: COLOR }]} />
+          </View>
+
+          {/* LEAF SHAPE */}
+          <View style={styles.leafContainer}>
+            <View style={[styles.leafOuter, { borderColor: COLOR }]}>
+              <View style={[styles.leafInner, { height: `${percent}%`, backgroundColor: COLOR + 'AA' }]} />
+              <Text style={[styles.leafText, { color: COLOR }]}>{dayCount}</Text>
+            </View>
+            <Text style={styles.leafEmoji}>🌿</Text>
+          </View>
+
+          {/* DOT GRID */}
+          <View style={styles.dotGrid}>
+            {Array.from({ length: 75 }, (_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  { backgroundColor: i < dayCount ? COLOR : COLOR + '25' },
+                ]}
+              />
+            ))}
+          </View>
+          <Text style={[styles.shapeLabel, { color: theme.textLight }]}>
+            🥗 75 {t.days}
+          </Text>
+        </View>
+
+        {/* TODAY FORM */}
+        {!todayDone ? (
+          <View style={[styles.formCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.formTitle, { color: theme.text }]}>
+              🥗 {t.todayTask}
+            </Text>
+
+            {/* MEALS */}
+            <Text style={[styles.label, { color: theme.textLight }]}>{t.meals}</Text>
+            {meals.map((meal, i) => (
+              <View key={i} style={[styles.mealTag, { backgroundColor: COLOR + '33' }]}>
+                <Text style={[styles.mealTagText, { color: COLOR }]}>🥗 {meal}</Text>
+                <TouchableOpacity onPress={() => setMeals(prev => prev.filter((_, j) => j !== i))}>
+                  <Text style={{ color: theme.textLight, fontWeight: '700' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <View style={styles.mealInputRow}>
+              <TextInput
+                style={[styles.mealInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                placeholder={t.mealName}
+                placeholderTextColor={theme.textLight}
+                value={mealName}
+                onChangeText={setMealName}
+              />
+              <TouchableOpacity
+                style={[styles.addMealBtn, { backgroundColor: COLOR }]}
+                onPress={addMeal}
+              >
+                <Text style={styles.addMealBtnText}>+</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* WATER */}
+            <Text style={[styles.label, { color: theme.textLight }]}>{t.water}</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              placeholder="2000"
+              placeholderTextColor={theme.textLight}
+              value={water}
+              onChangeText={setWater}
+              keyboardType="numeric"
+            />
+
+            {/* NOTES */}
+            <Text style={[styles.label, { color: theme.textLight }]}>{t.notes}</Text>
+            <TextInput
+              style={[styles.input, styles.notesInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              placeholder="Bugün nasıl beslendim..."
+              placeholderTextColor={theme.textLight}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+            />
+
+            <TouchableOpacity
+              style={[styles.saveBtn, { backgroundColor: COLOR }]}
+              onPress={handleSave}
+            >
+              <Text style={styles.saveBtnText}>✓ {t.markDone}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[styles.doneCard, { backgroundColor: COLOR + '22' }]}>
+            <Text style={styles.doneEmoji}>🥗</Text>
+            <Text style={[styles.doneTitle, { color: COLOR }]}>{t.completed}!</Text>
+            <Text style={[styles.doneSubtitle, { color: theme.textLight }]}>
+              {t.streak}: {dayCount} 🔥
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* SUCCESS MODAL */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
+            <Text style={styles.modalEmoji}>🥗</Text>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              Harika! Gün {dayCount} tamamlandı!
+            </Text>
+            <Text style={[styles.modalSub, { color: theme.textLight }]}>
+              {75 - dayCount} gün daha kaldı 🌿
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: COLOR }]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalBtnText}>Devam Et 🔥</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: 8,
+  },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  backText: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  scroll: { padding: 16, paddingBottom: 40 },
+  progressCard: {
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  progressTitle: { fontSize: 16, fontWeight: '700' },
+  progressPercent: { fontSize: 16, fontWeight: '800' },
+  progressBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 16 },
+  progressFill: { height: '100%', borderRadius: 4 },
+  leafContainer: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  leafOuter: {
+    width: 80,
+    height: 100,
+    borderRadius: 40,
+    borderWidth: 3,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  leafInner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  leafText: {
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  leafEmoji: { fontSize: 28 },
+  dotGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  dot: { width: 14, height: 14, borderRadius: 7 },
+  shapeLabel: { textAlign: 'center', fontSize: 13, marginTop: 4 },
+  formCard: {
+    borderRadius: 20,
+    padding: 16,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  formTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 12 },
+  mealTag: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 6,
+  },
+  mealTagText: { fontSize: 14, fontWeight: '600' },
+  mealInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  mealInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+  },
+  addMealBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMealBtnText: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  notesInput: { height: 80, textAlignVertical: 'top' },
+  saveBtn: {
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  doneCard: {
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+  },
+  doneEmoji: { fontSize: 60, marginBottom: 12 },
+  doneTitle: { fontSize: 24, fontWeight: '900', marginBottom: 8 },
+  doneSubtitle: { fontSize: 16 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalEmoji: { fontSize: 60, marginBottom: 16 },
+  modalTitle: { fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
+  modalSub: { fontSize: 15, marginBottom: 24 },
+  modalBtn: { borderRadius: 14, padding: 14, paddingHorizontal: 32 },
+  modalBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+});
